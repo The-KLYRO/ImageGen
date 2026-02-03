@@ -7,38 +7,42 @@ import src.Commands as commands
 
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
-print("Starting up bot...")
 
-async def post_init(application: Application):
-    # Runs once after the app is initialized (and inside a running event loop)
-    if Webhook_url and Webhook_url != "False":
-        try:
-            await application.bot.set_webhook(Webhook_url + TOKEN)
-            print("Webhook set ✅")
-        except Exception as e:
-            print("Failed to set webhook:", e)
-    else:
-        print("Webhook url not found, running normal polling....")
+async def post_init(app: Application):
+    me = await app.bot.get_me()
+    mode = "webhook" if (Webhook_url and Webhook_url != "False") else "polling"
+    print(f"Bot started ✅ @{me.username} ({mode})")
 
-def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    print(f"Update {update} caused error {context.error}")
+async def post_shutdown(app: Application):
+    print("Stopping bot... 🛑")
+
+async def post_stop(app: Application):
+    print("Bot stopped ✅")
+
+def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f'Update {update} caused error {context.error}')
 
 if __name__ == "__main__":
     app = (
         Application.builder()
         .token(TOKEN)
-        .post_init(post_init)   # ✅ proper place for async startup work
+        .post_init(post_init)
+        .post_shutdown(post_shutdown)
+        .post_stop(post_stop)
         .build()
     )
     for h in commands.list:app.add_handler(h)
-    app.add_error_handler(error_handler)
+    app.add_error_handler(error)
 
-    print("Running...")
-    if Webhook_url and Webhook_url != "False":
-        app.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            webhook_url=Webhook_url,
-        )
-    else:
-        app.run_polling(poll_interval=0)
+    try:
+        if Webhook_url and Webhook_url != "False":
+            print('webhook : ', Webhook_url)
+            app.run_webhook(
+                listen="0.0.0.0",
+                port=PORT,
+                webhook_url=Webhook_url,
+            )
+        else:
+            app.run_polling(poll_interval=0)
+    except Exception as e:
+        print(e)
