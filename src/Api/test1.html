@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ImgGen Prompt</title>
+  <style>
+    :root{
+      --bg:#0b0f19;
+      --panel:#121a2b;
+      --panel2:#0f1626;
+      --text:#e7eefc;
+      --muted:#a8b3cf;
+      --accent:#5dd6ff;
+      --danger:#ff5d7a;
+      --ok:#3dffb5;
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(93,214,255,.18), transparent 50%),
+                  radial-gradient(900px 500px at 100% 20%, rgba(61,255,181,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .card{
+      width:min(920px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .header{
+      padding:18px 18px 10px;
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:space-between;
+      background: linear-gradient(180deg, rgba(93,214,255,.08), transparent);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+    }
+    .title h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+    .title p{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .body{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    input[type="text"]{
+      width:100%;
+      padding:12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,24,.65);
+      color: var(--text);
+      outline:none;
+    }
+    input[type="text"]::placeholder{color: rgba(168,179,207,.75)}
+    input[type="text"]:focus{border-color: rgba(93,214,255,.45); box-shadow: 0 0 0 3px rgba(93,214,255,.12)}
+
+    button{
+      padding:12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(93,214,255,.25), rgba(93,214,255,.08));
+      color: var(--text);
+      cursor:pointer;
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition: transform .06s ease, filter .15s ease;
+      user-select:none;
+    }
+    button:active{transform: translateY(1px)}
+    button:disabled{opacity:.55; cursor:not-allowed; filter:saturate(.4)}
+
+    .status{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(18,26,43,.65);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .status .left{display:flex; align-items:center; gap:10px; min-width:0}
+    .pill{
+      font-size:12px;
+      padding:4px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      flex:0 0 auto;
+    }
+    .msg{color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+    .spinner{
+      width:18px; height:18px;
+      border-radius:999px;
+      border: 2px solid rgba(93,214,255,.25);
+      border-top-color: rgba(93,214,255,.95);
+      animation: spin .8s linear infinite;
+      display:none;
+      flex:0 0 auto;
+    }
+    .loading .spinner{display:inline-block}
+
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .preview{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      padding:14px;
+      border-radius: 18px;
+      background: rgba(15,22,38,.65);
+      border: 1px solid rgba(255,255,255,.06);
+      min-height: 240px;
+      place-items:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .preview img{
+      max-width:100%;
+      max-height: 560px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      display:none;
+      background: rgba(0,0,0,.15);
+    }
+
+    .placeholder{
+      text-align:center;
+      color: var(--muted);
+      font-size:13px;
+      padding:20px;
+    }
+
+    .error{
+      color: #ffd2da;
+      background: rgba(255,93,122,.10);
+      border: 1px solid rgba(255,93,122,.22);
+      padding:10px 12px;
+      border-radius: 14px;
+      font-size:12px;
+      display:none;
+    }
+
+    .meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      justify-content:flex-start;
+    }
+    .meta a{
+      color: var(--accent);
+      text-decoration:none;
+      border-bottom:1px dotted rgba(93,214,255,.45);
+    }
+
+    .kbd{
+      font-size:11px;
+      color: rgba(231,238,252,.85);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      padding:2px 8px;
+      border-radius: 8px;
+    }
+
+    footer{
+      padding: 0 18px 16px;
+      color: rgba(168,179,207,.75);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    @media (min-width: 860px){
+      .body{grid-template-columns: 420px 1fr; align-items:start}
+      .preview{min-height: 360px}
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="app">
+    <div class="header">
+      <div class="title">
+        <h1>ImgGen Prompt</h1>
+        <p>Type a prompt, hit send, and the page will fetch JSON then show the image. Humans love buttons. 🤷‍♂️</p>
+      </div>
+      <div class="meta">
+        <span class="kbd">Enter</span>
+        <span class="kbd">Ctrl/Cmd + K</span>
+      </div>
+    </div>
+
+    <div class="body">
+      <div>
+        <div class="row">
+          <input id="prompt" type="text" placeholder="Describe what you want (e.g., 'cyberpunk city at night, neon rain')" autocomplete="off" />
+          <button id="sendBtn" type="button" title="Send">
+            <span>Send</span>
+            <span aria-hidden="true">🚀</span>
+          </button>
+        </div>
+
+        <div class="status" id="status">
+          <div class="left">
+            <div class="spinner" aria-label="Loading"></div>
+            <span class="pill" id="pill">Idle</span>
+            <div class="msg" id="msg">Waiting for your prompt.</div>
+          </div>
+          <div class="meta" id="meta" style="justify-content:flex-end"></div>
+        </div>
+
+        <div class="error" id="error"></div>
+      </div>
+
+      <div class="preview" id="preview">
+        <div class="placeholder" id="placeholder">
+          Your image will appear here once the API decides to cooperate. 🧠✨
+        </div>
+        <img id="resultImg" alt="Generated result" />
+      </div>
+    </div>
+
+    <footer>
+      <div>Endpoint: <code>https://imggen.ct.ws/gen.php?prompt=...</code></div>
+      <div>Image base: <code>https://imggen.ct.ws/</code></div>
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = 'https://imggen.ct.ws';
+    const GEN_URL = `${API_BASE}/gen.php?prompt=`;
+
+    const app = document.getElementById('app');
+    const input = document.getElementById('prompt');
+    const sendBtn = document.getElementById('sendBtn');
+    const pill = document.getElementById('pill');
+    const msg = document.getElementById('msg');
+    const meta = document.getElementById('meta');
+    const errorBox = document.getElementById('error');
+    const placeholder = document.getElementById('placeholder');
+    const img = document.getElementById('resultImg');
+
+    let currentAbort = null;
+
+    function setLoading(isLoading, label = 'Loading', message = 'Working...'){
+      app.classList.toggle('loading', isLoading);
+      sendBtn.disabled = isLoading;
+      input.disabled = isLoading;
+      pill.textContent = label;
+      msg.textContent = message;
+    }
+
+    function clearError(){
+      errorBox.style.display = 'none';
+      errorBox.textContent = '';
+    }
+
+    function showError(text){
+      errorBox.textContent = text;
+      errorBox.style.display = 'block';
+    }
+
+    function setMeta(links = []){
+      meta.innerHTML = '';
+      links.forEach(({label, href}) => {
+        const a = document.createElement('a');
+        a.textContent = label;
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        meta.appendChild(a);
+      });
+    }
+
+    function resetPreview(){
+      img.style.display = 'none';
+      img.removeAttribute('src');
+      placeholder.style.display = 'block';
+    }
+
+    async function generate(){
+      const prompt = input.value.trim();
+      if(!prompt){
+        showError('Type something first. The universe won\'t guess your prompt for you.');
+        return;
+      }
+
+      // Cancel any in-flight request
+      if (currentAbort) currentAbort.abort();
+      currentAbort = new AbortController();
+
+      clearError();
+      setMeta([]);
+      resetPreview();
+
+      // Keep loading ON until image has fully loaded
+      setLoading(true, 'Requesting', 'Sending prompt to the API...');
+
+      try{
+        const url = GEN_URL + encodeURIComponent(prompt);
+        const res = await fetch(url, {
+          method: 'GET',
+          signal: currentAbort.signal,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if(!res.ok){
+          throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        }
+
+        setLoading(true, 'Processing', 'Got a response. Parsing JSON...');
+
+        const data = await res.json();
+        if(!data || data.success !== true || !data.path){
+          throw new Error('API returned unexpected JSON.');
+        }
+
+        const imageUrl = `${API_BASE}/${String(data.path).replace(/^\/+/, '')}`;
+        setMeta([
+          { label: 'Open image', href: imageUrl }
+        ]);
+
+        // Load image and stop loading ONLY after it fully loads
+        setLoading(true, 'Loading', 'Downloading image...');
+
+        await new Promise((resolve, reject) => {
+          const cleanup = () => {
+            img.onload = null;
+            img.onerror = null;
+          };
+
+          img.onload = () => {
+            cleanup();
+            resolve();
+          };
+          img.onerror = () => {
+            cleanup();
+            reject(new Error('Image failed to load.'));
+          };
+
+          // Bust cache a bit in case the server reuses paths
+          const bust = `cb=${Date.now()}`;
+          img.src = imageUrl + (imageUrl.includes('?') ? '&' : '?') + bust;
+        });
+
+        placeholder.style.display = 'none';
+        img.style.display = 'block';
+
+        setLoading(false, 'Done', 'Image loaded.');
+      }catch(err){
+        if (err?.name === 'AbortError'){
+          // Silent cancel
+          return;
+        }
+        setLoading(false, 'Error', 'Something went wrong.');
+        showError(err?.message || String(err));
+      }finally{
+        currentAbort = null;
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', generate);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        generate();
+      }
+    });
+
+    // Convenience: Ctrl/Cmd+K focuses the input
+    window.addEventListener('keydown', (e) => {
+      const isMac = navigator.platform.toLowerCase().includes('mac');
+      const combo = isMac ? e.metaKey : e.ctrlKey;
+      if (combo && e.key.toLowerCase() === 'k'){
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
+    });
+
+    // Start focused
+    input.focus();
+  </script>
+</body>
+</html>
